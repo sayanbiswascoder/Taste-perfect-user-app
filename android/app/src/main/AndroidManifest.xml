@@ -21,6 +21,16 @@
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />
         </intent-filter>
+        <intent-filter android:autoVerify="true">
+          <action android:name="android.intent.action.VIEW" />
+          <category android:name="android.intent.category.DEFAULT" />
+          <category android:name="android.intent.category.BROWSABLE" />
+
+          <data android:scheme="tasteperfect" android:host="changepassword" />
+
+          <!-- For HTTPS URLs (optional, for universal links) -->
+          <data android:scheme="https" android:host="tasteperfect.com" android:pathPrefix="/changepassword" />
+        </intent-filter>
       </activity>
     </application>
 </manifest>
