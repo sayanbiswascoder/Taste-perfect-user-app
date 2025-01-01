@@ -14,7 +14,7 @@ const CartScreen = ({navigation}) => {
   };
 
   const fetchCart = async () => {
-    axios.get('http://192.168.166.252:3000/api/user/getCart', {
+    axios.get('http://192.168.181.252:3000/api/user/getCart', {
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${await AsyncStorage.getItem('JWT')}`,

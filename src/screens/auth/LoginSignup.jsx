@@ -13,11 +13,12 @@ const LoginSignupScreen = ({ navigation }) => {
     const [password, setPassword] = useState('');
 
     const handleLogin = () => {
-        axios.post('http://192.168.166.252:3000/api/auth/logIn', {
+        axios.post('http://192.168.181.252:3000/api/auth/logIn', {
             type: 'users',
             email,
             password,
         }).then((response) => {
+            console.log(response);
             if(response.status === 200){
                 AsyncStorage.setItem('JWT', response.data.token);
                 navigation.reset({
@@ -26,18 +27,18 @@ const LoginSignupScreen = ({ navigation }) => {
                 });
             }
         }).catch((error) => {
-            console.log(error);
+            console.log(error.response.data);
             Toast.show({
                 type: 'error',
                 text2: error.response.data.message,
-                text2Style: {fontSize: 18, color: 'black'},
+                text2Style: {fontSize: 18, color: '#000000'},
             });
         });
 
     };
 
     const handleSignup = () => {
-        axios.post('http://192.168.166.252:3000/api/auth/signUp', {
+        axios.post('http://192.168.181.252:3000/api/auth/signUp', {
             type: 'users',
             name,
             email,
@@ -52,14 +53,35 @@ const LoginSignupScreen = ({ navigation }) => {
                 });
             }
         }).catch((error) => {
-            console.log(error);
+            console.log("ok", error.response.data.message);
             Toast.show({
                 type: 'error',
                 text2: error.response.data.message,
-                text2Style: {fontSize: 18, color: '#000'},
+                text2Style: {fontSize: 18, color: '#000000'},
             });
         });
     };
+
+    const handleForgetPassword = async () => {
+        if (email) {
+          axios.post('http://192.168.181.252:3000/api/auth/forgetPassword', {
+            type: 'users',
+            email: email,
+          }).then((response) => {
+            if(response.status === 200){
+                Toast.show({
+                    type:'success',
+                    text2: 'We have sent you a password resed link.\nplease check your email.',
+                    text2Style: {fontSize: 12, color: '#000000'},
+                });
+            }
+          }).catch((error) => {
+            console.error(error.response.data);
+          })
+        }else {
+          alert('Please enter your email address.');
+        }
+      };
 
     return (
         <>
@@ -119,7 +141,7 @@ const LoginSignupScreen = ({ navigation }) => {
                             onChangeText={setPassword}
                         />
                         {isLogin && (
-                            <TouchableOpacity onPress={() => navigation.push('ForgetPass')}>
+                            <TouchableOpacity onPress={handleForgetPassword}>
                                 <Text style={styles.forgotPassword}>Forgot password?</Text>
                             </TouchableOpacity>
                         )}
