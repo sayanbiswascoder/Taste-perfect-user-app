@@ -43,6 +43,7 @@ function App() {
     const JWT = await AsyncStorage.getItem('JWT');
     if (JWT) {
       axios.post('http://192.168.181.252:3000/api/auth/verifyJWT', {
+        'type': 'users',
         'token': JWT,
       }).then(response => {
         if (response.status === 200) {

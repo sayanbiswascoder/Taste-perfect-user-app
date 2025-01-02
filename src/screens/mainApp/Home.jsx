@@ -94,7 +94,7 @@ const HomeScreen = ({ navigation }) => {
   }, []);
   // Render each restaurant item
   const RenderRestaurant = ({ item }) => (
-    <TouchableOpacity onPress={() => navigation.navigate('Restaurant')} style={styles.restaurantItem}>
+    <TouchableOpacity onPress={() => navigation.navigate('Restaurant', { restaurant: item })} style={styles.restaurantItem}>
       <Image source={{ uri: item.image }} style={styles.restaurantImage} />
       <View style={styles.restaurantDetails}>
         <Text style={styles.restaurantName}>{item.name}</Text>

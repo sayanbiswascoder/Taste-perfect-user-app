@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import axios from 'axios';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, TextInput } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 
@@ -29,13 +30,14 @@ const dummyData = [
     },
 ];
 
-const RestaurantScreen = ({ navigation }) => {
+const RestaurantScreen = ({ navigation, route }) => {
     const [cart, setCart] = useState({});
     const [veg, setVeg] = useState(false);
     const [nonVeg, setNonVeg] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [totalItems, setTotalItems] = useState(0);
     const [totalPrice, setTotalPrice] = useState(0);
+    const [filteredData, setFilteredData] = useState([])
 
     const addToCart = (item) => {
         const newCart = { ...cart };
@@ -75,14 +77,26 @@ const RestaurantScreen = ({ navigation }) => {
         }
     };
 
-    const filteredData = dummyData.map(category => ({
-        ...category,
-        items: category.items.filter(item => {
-            const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
-            const matchesVegFilter = (veg && item.veg) || (nonVeg && !item.veg) || (!veg && !nonVeg);
-            return matchesSearch && matchesVegFilter;
-        }),
-    })).filter(category => category.items.length > 0);
+    useEffect(() => {
+        axios.post('http://192.168.181.252:3000/api/user/getRestaurantDishs', {
+            id: route.params.restaurant._id,
+        }).then((response) => {
+            if (response.status === 200) {
+                const dishs = response.data.data;
+                const fd = dishs.map(category => ({
+                    ...category,
+                    items: category.items.filter(item => {
+                        const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
+                        const matchesVegFilter = (veg && item.veg) || (nonVeg && !item.veg) || (!veg && !nonVeg);
+                        return matchesSearch && matchesVegFilter;
+                    }),
+                })).filter(category => category.items.length > 0);
+                setFilteredData(fd);
+            }
+        }).catch(err => {
+            console.log(err);
+        });
+    }, [nonVeg, route.params.restaurant._id, searchQuery, veg]);
 
     const renderItem = ({ item }) => {
         const quantity = cart[item.id] || 0;
