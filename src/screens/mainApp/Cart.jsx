@@ -4,9 +4,11 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, Image, StyleSheet, TouchableOpacity } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const CartScreen = ({navigation}) => {
+const CartScreen = ({navigation, route}) => {
   // Dummy data for cart items
   const [cartItems, setCartItems] = useState([]);
+
+  console.log(route.params.cart);
 
   // Calculate total price
   const calculateTotal = () => {

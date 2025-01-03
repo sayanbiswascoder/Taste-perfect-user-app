@@ -9,8 +9,8 @@ const dummyData = [
         id: '1',
         category: 'DIET MEAL',
         items: [
-            { id: '1-1', name: 'Idli', description: 'A south Indian dish', price: 120, image: 'https://via.placeholder.com/100', veg: true },
-            { id: '1-2', name: 'Mix Salad', description: 'Salad with added Mayonese', price: 50, image: 'https://via.placeholder.com/100', veg: true },
+            { id: '1-1', name: 'Idli', description: 'A south Indian dish', price: 120, image: 'https://via.placeholder.com/100', veg: false },
+            { id: '1-2', name: 'Mix Salad', description: 'Salad with added Mayonese', price: 50, image: 'https://via.placeholder.com/100', veg: false },
         ],
     },
     {
@@ -18,7 +18,7 @@ const dummyData = [
         category: 'BIRYANI',
         items: [
             { id: '2-1', name: 'Chicken Biryani', description: 'Delicious and spicy', price: 180, image: 'https://via.placeholder.com/100', veg: false },
-            { id: '2-2', name: 'Veg Biryani', description: 'Made with fresh vegetables', price: 150, image: 'https://via.placeholder.com/100', veg: true },
+            { id: '2-2', name: 'Veg Biryani', description: 'Made with fresh vegetables', price: 150, image: 'https://via.placeholder.com/100', veg: false },
         ],
     },
     {
@@ -37,78 +37,85 @@ const RestaurantScreen = ({ navigation, route }) => {
     const [searchQuery, setSearchQuery] = useState('');
     const [totalItems, setTotalItems] = useState(0);
     const [totalPrice, setTotalPrice] = useState(0);
-    const [filteredData, setFilteredData] = useState([])
+    const [dishes, setDishes] = useState([]);
+    const [filteredData, setFilteredData] = useState([]);
 
-    const addToCart = (item) => {
+    const addToCart = async (item) => {
         const newCart = { ...cart };
-        newCart[item.id] = (newCart[item.id] || 0) + 1;
+        newCart[item._id] = (newCart[item._id] || 0) + 1;
         setCart(newCart);
-        updateCartSummary(newCart);
+        await updateCartSummary(newCart);
     };
 
-    const removeFromCart = (item) => {
+    const removeFromCart = async (item) => {
         const newCart = { ...cart };
-        if (newCart[item.id] > 1) {
-            newCart[item.id] -= 1;
+        if (newCart[item._id] > 1) {
+            newCart[item._id] -= 1;
         } else {
-            delete newCart[item.id];
+            delete newCart[item._id];
         }
         setCart(newCart);
-        updateCartSummary(newCart);
+        await updateCartSummary(newCart);
     };
 
-    const updateCartSummary = (newCart) => {
+    const updateCartSummary = async (newCart) => {
+        console.log("chart", newCart);
         let items = 0;
         let price = 0;
-        for (const id in newCart) {
-            const item = findItemById(id);
-            items += newCart[id];
-            price += item.price * newCart[id];
+        for (const _id in newCart) {
+            const item = await findItemById(_id);
+            console.log("item", item);
+            items += newCart[_id];
+            price += item.price * newCart[_id];
         }
+        console.log("items", items);
         setTotalItems(items);
         setTotalPrice(price);
     };
 
-    const findItemById = (id) => {
-        for (const category of dummyData) {
+    const findItemById = async (id) => {
+        for (const category of filteredData) {
             for (const item of category.items) {
-                if (item.id === id) return item;
+                if (item._id === id) {return item;}
             }
         }
     };
+
+    useEffect(() => {
+        const filterData = dishes.map(category => ({
+            ...category,
+            items: category.items.filter(item => {
+                const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
+                const matchesVegFilter = (veg && item.veg) || (nonVeg && !item.veg) || (!veg && !nonVeg);
+                return matchesSearch && matchesVegFilter;
+            }),
+        })).filter(category => category.items.length > 0);
+        setFilteredData(filterData);
+    }, [dishes, nonVeg, searchQuery, veg]);
 
     useEffect(() => {
         axios.post('http://192.168.181.252:3000/api/user/getRestaurantDishs', {
             id: route.params.restaurant._id,
         }).then((response) => {
             if (response.status === 200) {
-                const dishs = response.data.data;
-                const fd = dishs.map(category => ({
-                    ...category,
-                    items: category.items.filter(item => {
-                        const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
-                        const matchesVegFilter = (veg && item.veg) || (nonVeg && !item.veg) || (!veg && !nonVeg);
-                        return matchesSearch && matchesVegFilter;
-                    }),
-                })).filter(category => category.items.length > 0);
-                setFilteredData(fd);
+                setDishes(response.data.data);
             }
         }).catch(err => {
             console.log(err);
         });
-    }, [nonVeg, route.params.restaurant._id, searchQuery, veg]);
+    }, [route.params.restaurant._id, searchQuery]);
 
     const renderItem = ({ item }) => {
-        const quantity = cart[item.id] || 0;
+        const quantity = cart[item._id] || 0;
 
         return (
             <View style={styles.itemContainer}>
                 <View style={styles.itemDetails}>
                     <View style={{
                         borderRadius: 5, borderWidth: 1, borderColor: item.veg ? 'green' : 'red',
-                        height: 20, width: 20, alignItems: 'center', justifyContent: 'center'
+                        height: 20, width: 20, alignItems: 'center', justifyContent: 'center',
                     }}>
-                        <View style={{ borderRadius: 100, backgroundColor: item.veg ? 'green' : 'red', height: 12, width: 12 }}></View>
+                        <View style={{ borderRadius: 100, backgroundColor: item.veg ? 'green' : 'red', height: 12, width: 12 }} />
                     </View>
                     <Text style={styles.itemName}>{item.name}</Text>
                     <Text style={styles.itemDescription}>{item.description}</Text>
@@ -141,17 +148,17 @@ const RestaurantScreen = ({ navigation, route }) => {
     return (
         <View style={styles.container}>
             <View style={styles.restaurantContainer}>
-                <Text style={styles.restaurantTitle}>Stayfit Restaurant</Text>
-                <Text style={styles.restaurantCuisine}>Indian, Chinese</Text>
-                <Text style={styles.restaurantLocation}>Karol Bagh, New Delhi, Delhi, India</Text>
+                <Text style={styles.restaurantTitle}>{route.params.restaurant.name}</Text>
+                <Text style={styles.restaurantCuisine}>{route.params.restaurant.cuisine}</Text>
+                <Text style={styles.restaurantLocation}>{route.params.restaurant.address}</Text>
                 <View style={styles.restaurantDetailsContainer}>
                     <View style={styles.restaurantDetails}>
-                        <Text style={styles.restaurantDetailItem}>⭐ 4</Text>
+                        <Text style={styles.restaurantDetailItem}>⭐ {route.params.restaurant.rating}</Text>
                         <Text style={styles.restaurantDetailItem}>Rating</Text>
                     </View>
                     <View style={styles.restaurantDetails}>
-                        <Text style={styles.restaurantDetailItem}>30 MINS</Text>
-                        <Text style={styles.restaurantDetailItem}>Delivery Time</Text>
+                        <Text style={styles.restaurantDetailItem}>{((route.params.restaurant.distance * 1.3) / 1000).toFixed(1)}</Text>
+                        <Text style={styles.restaurantDetailItem}>KM</Text>
                     </View>
                     {/* <View style={styles.restaurantDetails}>
                         <Text style={styles.restaurantDetailItem}>Rs. 250</Text>
@@ -173,11 +180,11 @@ const RestaurantScreen = ({ navigation, route }) => {
                 </View>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                     <TouchableOpacity style={[styles.filterButton, { borderColor: 'green' }]} onPress={() => setVeg(!veg)}>
-                        {veg && <View style={{ backgroundColor: 'green', width: 12, height: 12, borderRadius: 100 }}></View>}
+                        {veg && <View style={{ backgroundColor: 'green', width: 12, height: 12, borderRadius: 100 }} />}
                     </TouchableOpacity>
                     <Text style={styles.filterText}>Veg</Text>
                     <TouchableOpacity style={[styles.filterButton, { borderColor: 'red' }]} onPress={() => setNonVeg(!nonVeg)}>
-                        {nonVeg && <View style={{ backgroundColor: 'red', width: 12, height: 12, borderRadius: 100 }}></View>}
+                        {nonVeg && <View style={{ backgroundColor: 'red', width: 12, height: 12, borderRadius: 100 }} />}
                     </TouchableOpacity>
                     <Text style={styles.filterText}>Non-Veg</Text>
                 </View>
@@ -202,7 +209,7 @@ const RestaurantScreen = ({ navigation, route }) => {
                     <Text style={styles.cartText}>
                         {totalItems} Items | ₹{totalPrice}.00
                     </Text>
-                    <TouchableOpacity style={styles.cartButton} onPress={() => navigation.navigate('Checkout')}>
+                    <TouchableOpacity style={styles.cartButton} onPress={() => navigation.navigate('Cart', { cart: cart })}>
                         <Text style={styles.cartText}>VIEW CART</Text>
                         <Icon name="cart" size={20} color={'white'} />
                     </TouchableOpacity>

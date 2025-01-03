@@ -7,45 +7,6 @@ import Carousel from 'react-native-reanimated-carousel';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Dummy data for banners and restaurants
-// const bannerData = [
-//   { id: '1', title: 'Buy 1, Get 1 Free', url: 'https://via.placeholder.com/300x150', description: 'Order 2 items & pay for 1' },
-//   { id: '2', title: 'Fast Delivery', url: 'https://via.placeholder.com/300x150', description: 'We deliver fast!' },
-// ];
-
-// const restaurantData = [
-//   {
-//     id: '1',
-//     name: 'Stayfit Restaurant',
-//     cuisine: 'Indian, Chinese',
-//     rating: '4.0',
-//     time: '30 mins',
-//     price: '₹250 for two',
-//     distance: '0.99 kms away',
-//     image: 'https://via.placeholder.com/100',
-//   },
-//   {
-//     id: '2',
-//     name: 'Healthy Bites',
-//     cuisine: 'American, Continental',
-//     rating: '4.5',
-//     time: '25 mins',
-//     price: '₹300 for two',
-//     distance: '1.2 kms away',
-//     image: 'https://via.placeholder.com/100',
-//   },
-//   {
-//     id: '3',
-//     name: 'Healthy Bites',
-//     cuisine: 'American, Continental',
-//     rating: '4.5',
-//     time: '25 mins',
-//     price: '₹300 for two',
-//     distance: '1.2 kms away',
-//     image: 'https://via.placeholder.com/100',
-//   },
-// ];
-
 const HomeScreen = ({ navigation }) => {
   const [bannerData, setBannerData] = useState([]);
   const [favoritesRestaurant, setFavoritesRestaurant] = useState(undefined);
@@ -72,8 +33,8 @@ const HomeScreen = ({ navigation }) => {
 
     // Fetch nearby restaurants from the server
     axios.post('http://192.168.181.252:3000/api/user/getNearbyRestaurants', {
-      latitude: 88.649581,
-      longitude: 23.139974,
+      latitude: 88.649644,
+      longitude: 23.140200,
     }, {
       headers: {
         'Content-Type': 'application/json',
@@ -81,7 +42,6 @@ const HomeScreen = ({ navigation }) => {
       },
     }).then(res => {
       if(res.status === 200){
-        console.log(res.data);
         setRestaurantData(res.data);
       }
     }).catch((error) => {
@@ -101,7 +61,7 @@ const HomeScreen = ({ navigation }) => {
         <Text style={styles.restaurantCuisine}>{item.cuisine}</Text>
         <Text style={styles.restaurantInfo}>
           <Icon name="star" size={15} color={'red'} />
-          {item.rating}  {item.time}  {item.distance}
+          {item.rating} {item.distance}
         </Text>
       </View>
     </TouchableOpacity>

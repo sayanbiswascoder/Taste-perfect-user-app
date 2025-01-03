@@ -15,6 +15,7 @@ import CheckoutScreen from './CheckOut';
 import DeliveryTrackingScreen from './TrackOrder';
 import ManageAddressesScreen from './ManageAddress';
 import ForgetPasswordScreen from '../auth/ForgetPassword';
+import OrdersScreen from './Orders';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -31,7 +32,7 @@ const TabNavigator = () => {
         >
             <Tab.Screen name="Home" options={{ title: 'Home', tabBarIcon: ({ focused, size }) => <Icon name={focused ? 'pizza' : 'pizza-outline'} size={size} color="red" /> }} component={HomeScreen} />
             <Tab.Screen name="Search" options={{ title: 'Search', tabBarIcon: ({ focused, size }) => <Icon name={focused ? 'search' : 'search-outline'} size={size} color="red" /> }} component={SearchPage} />
-            <Tab.Screen name="Cart" options={{ title: 'Cart', tabBarIcon: ({ focused, size }) => <Icon name={focused ? 'cart' : 'cart-outline'} size={size} color="red" /> }} component={CartScreen} />
+            <Tab.Screen name="Orders" options={{ title: 'Orders', tabBarIcon: ({ focused, size }) => <Icon name={focused ? 'receipt' : 'receipt-outline'} size={size} color="red" /> }} component={OrdersScreen} />
             <Tab.Screen name="Account" options={{ title: 'Account', tabBarIcon: ({ focused, size }) => <Icon name={focused ? 'person' : 'person-outline'} size={size} color="red" /> }} component={AccountScreen} />
         </Tab.Navigator>
     );
@@ -46,6 +47,7 @@ const MainApp = () => {
                 <Stack.Navigator screenOptions={{ headerShown: false }}>
                     <Stack.Screen name="MainAppStack" component={TabNavigator} />
                     <Stack.Screen name="Restaurant" component={RestaurantScreen} />
+                    <Stack.Screen name="Cart" component={CartScreen} />
                     <Stack.Screen name="Checkout" component={CheckoutScreen} />
                     <Stack.Screen name="TrackOrder" component={DeliveryTrackingScreen} />
                     <Stack.Screen name="ManageAddress" component={ManageAddressesScreen} />
