@@ -18,7 +18,6 @@ const LoginSignupScreen = ({ navigation }) => {
             email,
             password,
         }).then((response) => {
-            console.log(response);
             if(response.status === 200){
                 AsyncStorage.setItem('JWT', response.data.token);
                 navigation.reset({
@@ -53,7 +52,6 @@ const LoginSignupScreen = ({ navigation }) => {
                 });
             }
         }).catch((error) => {
-            console.log("ok", error.response.data.message);
             Toast.show({
                 type: 'error',
                 text2: error.response.data.message,

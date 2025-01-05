@@ -5,39 +5,43 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import AddressSelectionModal from './ChooseAddress';
 
 
-const CheckoutScreen = () => {
+const CheckoutScreen = ({ navigation }) => {
     const [idliQty, setIdliQty] = useState(1);
     const [saladQty, setSaladQty] = useState(2);
     const [changeAddress, setChangeAddress] = useState(false)
 
+    const verifyOrderDetails = async () => {
+
+    };
+
+    console.log(RazorpayCheckout.open)
+
     const handleCheckout = async() => {
         let options = {
-            key_id: 'rzp_test_205kX9WiHKQoOu', // Enter the Key ID generated from the Dashboard
-            amount: 100 * 100, // Amount is in currency subunits. Default currency is INR. Hence, 50000 refers to 50000 paise
+            key: 'rzp_test_205kX9WiHKQoOu', // Enter the Key ID generated from the Dashboard
+            amount: (100 * 100).toString(), // Amount is in currency subunits. Default currency is INR. Hence, 50000 refers to 50000 paise
             currency: 'INR',
-            name: 'ArtiFund', //your business name
+            name: 'Taste Perfect', //your business name
             description: 'Test Transaction',
             image: 'https://via.placeholder.com/100',
-            order_id: 'order_DslnoIgkIDL8Zt', //This is a sample Order ID. Pass the `id` obtained in the response of Step 1
+            // order_id: 'order_DslnoIgkIDL8Zt', //This is a sample Order ID. Pass the `id` obtained in the response of Step 1
             prefill: { //We recommend using the prefill parameter to auto-fill customer's contact information especially their phone number
                 name: 'Sayan Biswas', //your customer's name
                 email: 'sayanbiswascode@gmail.com', //Provide the customer's phone number for better conversion rates
                 contact: '9101085890',
             },
             theme: {
-                color: '#164e63',
+                color: '#ff0000',
             },
         };
-        console.log(RazorpayCheckout);
-        const pay  = await RazorpayCheckout.open(options, (data)=> {
-            console.log("success", data);
+        await RazorpayCheckout.open(options, (data)=> {
+            console.log(data);
             Alert.alert(`Success: ${data.razorpay_payment_id}`);
         }, (error)=> {
             // handle failure
-            console.log("failure", error);
+            console.log(error);
             Alert.alert(`Failure: ${error.code} | ${error.description}`);
         });
-        console.log(pay);
         // .then((data) => {
         //     // handle success
         //     Alert.alert(`Success: ${data.razorpay_payment_id}`);
@@ -133,7 +137,7 @@ const CheckoutScreen = () => {
             </ScrollView>
             <View style={styles.paymentSection}>
                 <Text style={styles.totalAmount}>₹{totalToPay.toFixed(2)}</Text>
-                <TouchableOpacity style={styles.paymentButton} onPress={()=> {}}>
+                <TouchableOpacity style={styles.paymentButton} onPress={handleCheckout}>
                     <Text style={styles.paymentText}>MAKE PAYMENT</Text>
                 </TouchableOpacity>
             </View>

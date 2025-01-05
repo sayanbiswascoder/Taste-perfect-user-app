@@ -59,16 +59,13 @@ const RestaurantScreen = ({ navigation, route }) => {
     };
 
     const updateCartSummary = async (newCart) => {
-        console.log("chart", newCart);
         let items = 0;
         let price = 0;
         for (const _id in newCart) {
             const item = await findItemById(_id);
-            console.log("item", item);
             items += newCart[_id];
             price += item.price * newCart[_id];
         }
-        console.log("items", items);
         setTotalItems(items);
         setTotalPrice(price);
     };

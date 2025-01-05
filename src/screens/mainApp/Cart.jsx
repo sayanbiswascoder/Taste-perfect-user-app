@@ -4,40 +4,39 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, Image, StyleSheet, TouchableOpacity } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const CartScreen = ({navigation, route}) => {
+const CartScreen = ({ navigation, route }) => {
   // Dummy data for cart items
   const [cartItems, setCartItems] = useState([]);
-
-  console.log(route.params.cart);
 
   // Calculate total price
   const calculateTotal = () => {
     return cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
   };
 
-  const fetchCart = async () => {
-    axios.get('http://192.168.181.252:3000/api/user/getCart', {
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${await AsyncStorage.getItem('JWT')}`,
-      },
-    }).then(response => {
+  const fetchCartItems = () => {
+    axios.post('http://192.168.181.252:3000/api/user/getDishsDetails', {
+      dishes: Object.keys(route.params.cart),
+    }).then((response) => {
       if (response.status === 200) {
-        setCartItems(response.data);
+        let data = response.data.dishes;
+        data = data.map((dish) => ({...dish, quantity: route.params.cart[dish._id] }));
+        console.log(data);
+        setCartItems(data);
       }
-    }).catch(err => {
-      console.log(err);
+    }).catch((error) => {
+      console.log(error);
     });
   };
 
   useEffect(() => {
-    fetchCart();
+    fetchCartItems();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Render each cart item
   const renderItem = ({ item }) => (
     <View style={styles.cartItem}>
-      <Image source={{ uri: item.image }} style={[styles.itemImage, {tintColor: 'gray'}]} />
+      <Image source={{ uri: item.image }} style={[styles.itemImage, { tintColor: 'gray' }]} />
       <Image source={{ uri: item.image }} style={[styles.itemImage, { position: 'absolute', height: 80, width: 80, left: 10, opacity: item.available ? 1 : 0.3 }]} />
       <View style={styles.itemInfo}>
         <Text style={[styles.itemName, { color: item.available ? 'black' : 'gray' }]}>{item.name}</Text>
@@ -54,14 +53,14 @@ const CartScreen = ({navigation, route}) => {
       <FlatList
         data={cartItems}
         renderItem={renderItem}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item._id}
         contentContainerStyle={styles.listContainer}
       />
       <View style={styles.footer}>
         <Text style={styles.totalLabel}>Total:</Text>
         <Text style={styles.totalAmount}>₹{calculateTotal()}</Text>
       </View>
-      <TouchableOpacity style={styles.checkoutButton} onPress={()=> navigation.navigate('Checkout')}>
+      <TouchableOpacity style={styles.checkoutButton} onPress={() => navigation.navigate('Checkout')}>
         <Text style={styles.checkoutButtonText}>Proceed to Checkout</Text>
       </TouchableOpacity>
     </View>

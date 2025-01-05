@@ -61,7 +61,6 @@ const AccountScreen = ({ navigation }) => {
         }).then(res => {
             if (res.status === 200) {
                 setUserProfile(res.data);
-                console.log(res.data);
             }
         }).catch(err => console.log(err));
 
@@ -73,7 +72,6 @@ const AccountScreen = ({ navigation }) => {
         }).then(res => {
             if (res.status === 200) {
                 setPastOrders(res.data);
-                console.log(res.data);
             }
         }).catch(err => console.log(err));
     };
