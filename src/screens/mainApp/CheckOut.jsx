@@ -1,20 +1,52 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
 import RazorpayCheckout from 'react-native-razorpay';
 import Icon from 'react-native-vector-icons/Ionicons';
 import AddressSelectionModal from './ChooseAddress';
+import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
-const CheckoutScreen = ({ navigation }) => {
-    const [idliQty, setIdliQty] = useState(1);
-    const [saladQty, setSaladQty] = useState(2);
-    const [changeAddress, setChangeAddress] = useState(false)
+const CheckoutScreen = ({ navigation, route }) => {
+    const [restaurant,, setRestaurant,] = useState({});
+    const [cartItems, setCartItems] = useState([]);
+    const [itemTotal, setItemTotal] = useState(0);
+    const [totalToPay, setTotalToPay] = useState(0);
+    const [address, setAddress] = useState(false)
 
     const verifyOrderDetails = async () => {
-
+        let dishes = route.params.cartItems;
+        let isSameRestaurant = true;
+        for (let i = 0; i < dishes.length - 1; i++) {
+            if (dishes[i].restaurant !== dishes[i + 1].restaurant) {
+                isSameRestaurant = false;
+                break;
+            }
+        }
+        if (!isSameRestaurant) {
+            Alert.alert('Warning', 'Please select dishes from the same restaurant.');
+            return;
+        }
+        axios.post('https://192.168.231.252:8080/api/user/chargesRestaurantsDetails',{
+            dishes: route.params.cartItems,
+            restaurantId: route.params.cartItems[0].restaurantId,
+            address: await AsyncStorage.getItem('address'),
+        });
     };
 
-    console.log(RazorpayCheckout.open)
+    const selectAddress = async() => {
+        if(await AsyncStorage.getItem('address') === null) {
+            Alert.alert('Warning', 'Please add an address to your account.');
+            navigation.push('ManageAddress');
+        } else {
+            setAddress(await AsyncStorage.getItem('address'));
+            verifyOrderDetails();
+        }
+    };
+
+    useEffect(() => {
+      selectAddress();
+    }, []);
 
     const handleCheckout = async() => {
         let options = {
@@ -51,25 +83,12 @@ const CheckoutScreen = ({ navigation }) => {
         // });
     };
 
-    // Dummy Data
-    const restaurant = {
-        name: 'Stayfit Restaurant',
-        location: 'Karol Bagh, New Delhi, Delhi, India',
-        items: [
-            { name: 'Idli', price: 120.0, quantity: idliQty, setQuantity: setIdliQty },
-            { name: 'Mix Salad', price: 100.0, quantity: saladQty, setQuantity: setSaladQty },
-        ],
-        deliveryFee: 20.0,
-        taxes: 11.0,
-        address: '16/14, WEA, Karol Bagh, New Delhi, Delhi 110005, India',
-    };
-
     const delhevery = {
         address: '16/14, WEA, Karol Bagh, New Delhi, Delhi 110005, India',
     }
 
-    const itemTotal = restaurant.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-    const totalToPay = itemTotal + restaurant.deliveryFee + restaurant.taxes;
+    // const itemTotal = route.params.cartItems.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    // const totalToPay = itemTotal + restaurant.deliveryFee + restaurant.taxes;
 
     return (
         <>
@@ -79,17 +98,11 @@ const CheckoutScreen = ({ navigation }) => {
                     <Text style={styles.restaurantName}>{restaurant.name}</Text>
                     <Text style={styles.restaurantLocation}>{restaurant.location}</Text>
 
-                    {restaurant.items.map((item, index) => (
+                    {cartItems.map((item, index) => (
                         <View key={index} style={styles.itemRow}>
                             <Text style={styles.itemName}>{item.name}</Text>
                             <View style={styles.quantityControl}>
-                                <TouchableOpacity onPress={() => item.setQuantity(Math.max(1, item.quantity - 1))}>
-                                    <Text style={styles.quantityButton}>-</Text>
-                                </TouchableOpacity>
                                 <Text style={styles.quantity}>{item.quantity}</Text>
-                                <TouchableOpacity onPress={() => item.setQuantity(item.quantity + 1)}>
-                                    <Text style={styles.quantityButton}>+</Text>
-                                </TouchableOpacity>
                             </View>
                             <Text style={styles.itemPrice}>₹{(item.price * item.quantity).toFixed(2)}</Text>
                         </View>
@@ -114,11 +127,11 @@ const CheckoutScreen = ({ navigation }) => {
                     </View>
                     <View style={styles.billRow}>
                         <Text style={styles.billText}>Delivery Fee</Text>
-                        <Text style={styles.billText}>₹{restaurant.deliveryFee.toFixed(2)}</Text>
+                        {restaurant.deliveryFee && <Text style={styles.billText}>₹{restaurant.deliveryFee.toFixed(2)}</Text>}
                     </View>
                     <View style={styles.billRow}>
                         <Text style={styles.billText}>Taxes</Text>
-                        <Text style={styles.billText}>₹{restaurant.taxes.toFixed(2)}</Text>
+                        {restaurant.taxes && <Text style={styles.billText}>₹{restaurant.taxes.toFixed(2)}</Text>}
                     </View>
                     <View style={styles.billRow}>
                         <Text style={styles.billTotalText}>To Pay</Text>
@@ -126,13 +139,13 @@ const CheckoutScreen = ({ navigation }) => {
                     </View>
                 </View>
 
-                <TouchableOpacity style={styles.addressSection} onPress={() => setChangeAddress(true)}>
+                <View style={styles.addressSection}>
                     <Icon name="home-outline" size={30} color={'red'} />
                     <View style={{ flexDirection: 'column', flexShrink: 1 }}>
-                        <Text style={styles.addressText}>Deliver to Sarai Rohilla Station</Text>
-                        <Text style={styles.address}>{delhevery.address}</Text>
+                        <Text style={styles.addressText}>{address}</Text>
+                        {/* <Text style={styles.address}>{delhevery.address}</Text> */}
                     </View>
-                </TouchableOpacity>
+                </View>
 
             </ScrollView>
             <View style={styles.paymentSection}>
@@ -141,7 +154,7 @@ const CheckoutScreen = ({ navigation }) => {
                     <Text style={styles.paymentText}>MAKE PAYMENT</Text>
                 </TouchableOpacity>
             </View>
-            <AddressSelectionModal isVisible={changeAddress} onSelectAddress={()=> {}} onClose={() => setChangeAddress(false)} />
+            {/* <AddressSelectionModal isVisible={changeAddress} onSelectAddress={()=> {}} onClose={() => setChangeAddress(false)} /> */}
         </>
     );
 };

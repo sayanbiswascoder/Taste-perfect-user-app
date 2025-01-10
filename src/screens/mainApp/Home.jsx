@@ -6,21 +6,23 @@ import { View, Text, Image, StyleSheet, FlatList, ScrollView, TouchableOpacity, 
 import Carousel from 'react-native-reanimated-carousel';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import AddressSelectionModal from './ChooseAddress';
 
 const HomeScreen = ({ navigation }) => {
   const [bannerData, setBannerData] = useState([]);
   const [favoritesRestaurant, setFavoritesRestaurant] = useState(undefined);
   const [restaurantData, setRestaurantData] = useState(undefined);
+  const [changeAddress, setChangeAddress] = useState(false);
 
   const fetchData = async () => {
-    axios.get('http://192.168.181.252:3000/api/admin/banner').then(({ data }) => {
+    axios.get('http://192.168.231.252:3000/api/admin/banner').then(({ data }) => {
       setBannerData(data.banners);
     }).catch((error) => {
       console.log(error);
     });
 
     // Fetch favorite restaurants from the server
-    axios.get('http://192.168.181.252:3000/api/user/getFavRestaurant', {
+    axios.get('http://192.168.231.252:3000/api/user/getFavRestaurant', {
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${await AsyncStorage.getItem('JWT')}`,
@@ -32,7 +34,7 @@ const HomeScreen = ({ navigation }) => {
     });
 
     // Fetch nearby restaurants from the server
-    axios.post('http://192.168.181.252:3000/api/user/getNearbyRestaurants', {
+    axios.post('http://192.168.231.252:3000/api/user/getNearbyRestaurants', {
       latitude: 88.649644,
       longitude: 23.140200,
     }, {
@@ -71,13 +73,13 @@ const HomeScreen = ({ navigation }) => {
     {/* <SafeAreaView> */}
     {/* Location and Search Bar */}
     <View style={styles.locationContainer}>
-      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+      <TouchableOpacity onPress={() => setChangeAddress(true)} style={{ flexDirection: 'row', alignItems: 'center' }}>
         <Icon name="location-sharp" size={30} color={'red'} />
         <View>
           <Text style={styles.locationText}>Sarai Restaurant</Text>
           <Text style={styles.locationSubText}>167 45 Street 16/14, WEA, Karol Bagh, New Delhi</Text>
         </View>
-      </View>
+      </TouchableOpacity>
     </View>
     <ScrollView style={styles.container}>
       <View style={styles.searchContainer}>
@@ -91,7 +93,7 @@ const HomeScreen = ({ navigation }) => {
       {/* Banner Carousel */}
       <Carousel
         data={bannerData}
-        renderItem={({ item }) => <Image style={styles.banner} source={{ uri: `http://192.168.181.252:3000${item}` }} />}
+        renderItem={({ item }) => <Image style={styles.banner} source={{ uri: `http://192.168.231.252:3000${item}` }} />}
         width={400}
         height={210}
         loop
@@ -115,6 +117,7 @@ const HomeScreen = ({ navigation }) => {
         }
       </View>
     </ScrollView>
+    <AddressSelectionModal isVisible={changeAddress} onSelectAddress={()=> {}} onClose={() => setChangeAddress(false)} />
   </>;
 };
 

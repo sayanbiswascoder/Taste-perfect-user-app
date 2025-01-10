@@ -91,7 +91,7 @@ const RestaurantScreen = ({ navigation, route }) => {
     }, [dishes, nonVeg, searchQuery, veg]);
 
     useEffect(() => {
-        axios.post('http://192.168.181.252:3000/api/user/getRestaurantDishs', {
+        axios.post('http://192.168.231.252:3000/api/user/getRestaurantDishs', {
             id: route.params.restaurant._id,
         }).then((response) => {
             if (response.status === 200) {

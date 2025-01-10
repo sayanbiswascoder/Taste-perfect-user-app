@@ -14,7 +14,7 @@ const CartScreen = ({ navigation, route }) => {
   };
 
   const fetchCartItems = () => {
-    axios.post('http://192.168.181.252:3000/api/user/getDishsDetails', {
+    axios.post('http://192.168.231.252:3000/api/user/getDishsDetails', {
       dishes: Object.keys(route.params.cart),
     }).then((response) => {
       if (response.status === 200) {
@@ -60,7 +60,7 @@ const CartScreen = ({ navigation, route }) => {
         <Text style={styles.totalLabel}>Total:</Text>
         <Text style={styles.totalAmount}>₹{calculateTotal()}</Text>
       </View>
-      <TouchableOpacity style={styles.checkoutButton} onPress={() => navigation.navigate('Checkout')}>
+      <TouchableOpacity style={styles.checkoutButton} onPress={() => navigation.navigate('Checkout', { cartItems })}>
         <Text style={styles.checkoutButtonText}>Proceed to Checkout</Text>
       </TouchableOpacity>
     </View>
