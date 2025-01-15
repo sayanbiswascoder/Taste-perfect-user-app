@@ -8,13 +8,16 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
 const CheckoutScreen = ({ navigation, route }) => {
-    const [restaurant,, setRestaurant,] = useState({});
+    const [restaurant, setRestaurant] = useState({});
     const [cartItems, setCartItems] = useState([]);
+    const [deliveryFee, setDeliveryFee] = useState(0);
+    const [charges, setCharges] = useState(0);
     const [itemTotal, setItemTotal] = useState(0);
     const [totalToPay, setTotalToPay] = useState(0);
-    const [address, setAddress] = useState(false)
+    const [address, setAddress] = useState(false);
 
     const verifyOrderDetails = async () => {
+        console.log('Verifying order details');
         let dishes = route.params.cartItems;
         let isSameRestaurant = true;
         for (let i = 0; i < dishes.length - 1; i++) {
@@ -27,53 +30,103 @@ const CheckoutScreen = ({ navigation, route }) => {
             Alert.alert('Warning', 'Please select dishes from the same restaurant.');
             return;
         }
-        axios.post('https://192.168.231.252:8080/api/user/chargesRestaurantsDetails',{
+        axios.post('http://192.168.100.252:3000/api/user/chargesRestaurantsDetails',{
             dishes: route.params.cartItems,
             restaurantId: route.params.cartItems[0].restaurantId,
             address: await AsyncStorage.getItem('address'),
+        }).then(response => {
+            console.log(response.data);
+            if(response.status === 200) {
+                setCharges(response.data.charges);
+                setCartItems(route.params.cartItems);
+                setRestaurant(response.data.restaurant);
+                setDeliveryFee(response.data.deliveryFee);
+                setItemTotal(calculateItemTotal());
+            }
+        }).catch(err => {
+            console.log(err);
         });
     };
 
+    const calculateItemTotal = () => {
+        let sum = 0;
+        return route.params.cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    };
+
+    useEffect(() => {
+        setTotalToPay(itemTotal + deliveryFee + charges);
+    }, [charges, deliveryFee, itemTotal]);
+
     const selectAddress = async() => {
-        if(await AsyncStorage.getItem('address') === null) {
+        await AsyncStorage.setItem('address', JSON.stringify({
+            'address': 'Gangnapur, Nadia',
+            coordinates: {
+                longitude: 23.139938,
+                latitude: 88.649606,
+            },
+        }));
+        let adrs = await AsyncStorage.getItem('address');
+        if(adrs === null) {
             Alert.alert('Warning', 'Please add an address to your account.');
             navigation.push('ManageAddress');
         } else {
-            setAddress(await AsyncStorage.getItem('address'));
+            setAddress(JSON.parse(adrs).address);
             verifyOrderDetails();
         }
     };
+
+    useEffect(()=> console.log(deliveryFee), [deliveryFee]);
 
     useEffect(() => {
       selectAddress();
     }, []);
 
     const handleCheckout = async() => {
-        let options = {
-            key: 'rzp_test_205kX9WiHKQoOu', // Enter the Key ID generated from the Dashboard
-            amount: (100 * 100).toString(), // Amount is in currency subunits. Default currency is INR. Hence, 50000 refers to 50000 paise
-            currency: 'INR',
-            name: 'Taste Perfect', //your business name
-            description: 'Test Transaction',
-            image: 'https://via.placeholder.com/100',
-            // order_id: 'order_DslnoIgkIDL8Zt', //This is a sample Order ID. Pass the `id` obtained in the response of Step 1
-            prefill: { //We recommend using the prefill parameter to auto-fill customer's contact information especially their phone number
-                name: 'Sayan Biswas', //your customer's name
-                email: 'sayanbiswascode@gmail.com', //Provide the customer's phone number for better conversion rates
-                contact: '9101085890',
-            },
-            theme: {
-                color: '#ff0000',
-            },
-        };
-        await RazorpayCheckout.open(options, (data)=> {
-            console.log(data);
-            Alert.alert(`Success: ${data.razorpay_payment_id}`);
-        }, (error)=> {
-            // handle failure
-            console.log(error);
-            Alert.alert(`Failure: ${error.code} | ${error.description}`);
-        });
+        axios.post('http://192.168.100.252:3000/api/user/initiatePayment', {
+            amount: totalToPay,
+        }).then(async(response) => {
+            if (response.status === 200) {
+                let razorpayOrderId = response.data.id;
+                console.log('Razorpay Order ID: ', razorpayOrderId);
+                let options = {
+                    key: 'rzp_test_bDPeFco4rKBEPk', // Enter the Key ID generated from the Dashboard
+                    amount: (totalToPay * 100).toString(), // Amount is in currency subunits. Default currency is INR. Hence, 50000 refers to 50000 paise
+                    order_id: razorpayOrderId, // Order id generated from the server
+                    currency: 'INR',
+                    name: 'Taste Perfect', //your business name
+                    description: 'Test Transaction',
+                    image: 'https://via.placeholder.com/100',
+                    // order_id: 'order_DslnoIgkIDL8Zt', //This is a sample Order ID. Pass the `id` obtained in the response of Step 1
+                    prefill: { //We recommend using the prefill parameter to auto-fill customer's contact information especially their phone number
+                        name: 'Sayan Biswas', //your customer's name
+                        email: 'sayanbiswascode@gmail.com', //Provide the customer's phone number for better conversion rates
+                    },
+                    theme: {
+                        color: '#ff0000',
+                    },
+                };
+
+                await RazorpayCheckout.open(options, (data)=> {
+                    // handle success
+                    axios.post('http://192.168.100.252:3000/api/user/verifyAndPlaceOrder', {
+                        razorpayPaymentDetails: data,
+                    }).then(res => {
+                        console.log(res.data);
+                        if(res.status === 200) {
+                            Alert.alert('Payment Successful!');
+                            navigation.popToTop();
+                        }
+                    }).catch(err => {
+                        console.log(err);
+                        Alert.alert('Payment Failed!');
+                    });
+                }, (error)=> {
+                    // handle failure
+                    console.log(error);
+                    Alert.alert(`Failure: ${error.code} | ${error.description}`);
+                });
+            }
+        }).catch(err=> console.log(err));
         // .then((data) => {
         //     // handle success
         //     Alert.alert(`Success: ${data.razorpay_payment_id}`);
@@ -96,7 +149,7 @@ const CheckoutScreen = ({ navigation, route }) => {
 
                 <View style={styles.section}>
                     <Text style={styles.restaurantName}>{restaurant.name}</Text>
-                    <Text style={styles.restaurantLocation}>{restaurant.location}</Text>
+                    {/* <Text style={styles.restaurantLocation}>{restaurant.location}</Text> */}
 
                     {cartItems.map((item, index) => (
                         <View key={index} style={styles.itemRow}>
@@ -127,11 +180,15 @@ const CheckoutScreen = ({ navigation, route }) => {
                     </View>
                     <View style={styles.billRow}>
                         <Text style={styles.billText}>Delivery Fee</Text>
-                        {restaurant.deliveryFee && <Text style={styles.billText}>₹{restaurant.deliveryFee.toFixed(2)}</Text>}
+                        <Text style={styles.billText}>₹{deliveryFee.toFixed(2)}</Text>
                     </View>
-                    <View style={styles.billRow}>
+                    {/* <View style={styles.billRow}>
                         <Text style={styles.billText}>Taxes</Text>
                         {restaurant.taxes && <Text style={styles.billText}>₹{restaurant.taxes.toFixed(2)}</Text>}
+                    </View> */}
+                    <View style={styles.billRow}>
+                        <Text style={styles.billText}>Platform Charges</Text>
+                        <Text style={styles.billText}>₹{charges.toFixed(2)}</Text>
                     </View>
                     <View style={styles.billRow}>
                         <Text style={styles.billTotalText}>To Pay</Text>
