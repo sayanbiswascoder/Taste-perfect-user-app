@@ -15,14 +15,14 @@ const HomeScreen = ({ navigation }) => {
   const [changeAddress, setChangeAddress] = useState(false);
 
   const fetchData = async () => {
-    axios.get('http://192.168.100.252:3000/api/admin/banner').then(({ data }) => {
+    axios.get('http://192.168.176.252:3000/api/admin/banner').then(({ data }) => {
       setBannerData(data.banners);
     }).catch((error) => {
       console.log(error);
     });
 
     // Fetch favorite restaurants from the server
-    axios.get('http://192.168.100.252:3000/api/user/getFavRestaurant', {
+    axios.get('http://192.168.176.252:3000/api/user/getFavRestaurant', {
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${await AsyncStorage.getItem('JWT')}`,
@@ -34,7 +34,7 @@ const HomeScreen = ({ navigation }) => {
     });
 
     // Fetch nearby restaurants from the server
-    axios.post('http://192.168.100.252:3000/api/user/getNearbyRestaurants', {
+    axios.post('http://192.168.176.252:3000/api/user/getNearbyRestaurants', {
       latitude: 88.649644,
       longitude: 23.140200,
     }, {
@@ -93,7 +93,7 @@ const HomeScreen = ({ navigation }) => {
       {/* Banner Carousel */}
       <Carousel
         data={bannerData}
-        renderItem={({ item }) => <Image style={styles.banner} source={{ uri: `http://192.168.100.252:3000${item}` }} />}
+        renderItem={({ item }) => <Image style={styles.banner} source={{ uri: `http://192.168.176.252:3000${item}` }} />}
         width={400}
         height={210}
         loop

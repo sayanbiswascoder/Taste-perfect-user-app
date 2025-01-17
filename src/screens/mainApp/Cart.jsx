@@ -14,7 +14,7 @@ const CartScreen = ({ navigation, route }) => {
   };
 
   const fetchCartItems = () => {
-    axios.post('http://192.168.100.252:3000/api/user/getDishsDetails', {
+    axios.post('http://192.168.176.252:3000/api/user/getDishsDetails', {
       dishes: Object.keys(route.params.cart),
     }).then((response) => {
       if (response.status === 200) {

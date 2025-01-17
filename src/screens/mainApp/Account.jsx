@@ -53,7 +53,7 @@ const AccountScreen = ({ navigation }) => {
     const [pastOrders, setPastOrders] = useState(undefined);
 
     const fetchData = async () => {
-        axios.get('http://192.168.100.252:3000/api/user/getAccountDetails/', {
+        axios.get('http://192.168.176.252:3000/api/user/getAccountDetails/', {
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${await AsyncStorage.getItem('JWT')}`,
@@ -64,7 +64,7 @@ const AccountScreen = ({ navigation }) => {
             }
         }).catch(err => console.log(err));
 
-        axios.get('http://192.168.100.252:3000/api/user/getPastOrders/', {
+        axios.get('http://192.168.176.252:3000/api/user/getPastOrders/', {
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${await AsyncStorage.getItem('JWT')}`,

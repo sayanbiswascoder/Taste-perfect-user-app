@@ -1,13 +1,14 @@
+/* eslint-disable react-native/no-inline-styles */
 import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
 import RazorpayCheckout from 'react-native-razorpay';
 import Icon from 'react-native-vector-icons/Ionicons';
-import AddressSelectionModal from './ChooseAddress';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
 const CheckoutScreen = ({ navigation, route }) => {
+    const [isProcessing, setIsProcessing] = useState(false);
     const [restaurant, setRestaurant] = useState({});
     const [cartItems, setCartItems] = useState([]);
     const [deliveryFee, setDeliveryFee] = useState(0);
@@ -17,7 +18,6 @@ const CheckoutScreen = ({ navigation, route }) => {
     const [address, setAddress] = useState(false);
 
     const verifyOrderDetails = async () => {
-        console.log('Verifying order details');
         let dishes = route.params.cartItems;
         let isSameRestaurant = true;
         for (let i = 0; i < dishes.length - 1; i++) {
@@ -30,7 +30,7 @@ const CheckoutScreen = ({ navigation, route }) => {
             Alert.alert('Warning', 'Please select dishes from the same restaurant.');
             return;
         }
-        axios.post('http://192.168.100.252:3000/api/user/chargesRestaurantsDetails',{
+        axios.post('http://192.168.176.252:3000/api/user/chargesRestaurantsDetails',{
             dishes: route.params.cartItems,
             restaurantId: route.params.cartItems[0].restaurantId,
             address: await AsyncStorage.getItem('address'),
@@ -49,7 +49,6 @@ const CheckoutScreen = ({ navigation, route }) => {
     };
 
     const calculateItemTotal = () => {
-        let sum = 0;
         return route.params.cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
     };
 
@@ -79,15 +78,23 @@ const CheckoutScreen = ({ navigation, route }) => {
 
     useEffect(() => {
       selectAddress();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const handleCheckout = async() => {
-        axios.post('http://192.168.100.252:3000/api/user/initiatePayment', {
+        setIsProcessing(true);
+        axios.post('http://192.168.176.252:3000/api/user/initiatePayment', {
+            items: cartItems,
+            restaurantId: route.params.cartItems[0].restaurantId,
             amount: totalToPay,
+        }, {
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${await AsyncStorage.getItem('JWT')}`,
+            },
         }).then(async(response) => {
             if (response.status === 200) {
-                let razorpayOrderId = response.data.id;
-                console.log('Razorpay Order ID: ', razorpayOrderId);
+                let razorpayOrderId = response.data.orderId;
                 let options = {
                     key: 'rzp_test_bDPeFco4rKBEPk', // Enter the Key ID generated from the Dashboard
                     amount: (totalToPay * 100).toString(), // Amount is in currency subunits. Default currency is INR. Hence, 50000 refers to 50000 paise
@@ -106,12 +113,11 @@ const CheckoutScreen = ({ navigation, route }) => {
                     },
                 };
 
-                await RazorpayCheckout.open(options, (data)=> {
+                await RazorpayCheckout.open(options).then(data=> {
                     // handle success
-                    axios.post('http://192.168.100.252:3000/api/user/verifyAndPlaceOrder', {
+                    axios.post('http://192.168.176.252:3000/api/user/verifyAndPlaceOrder', {
                         razorpayPaymentDetails: data,
                     }).then(res => {
-                        console.log(res.data);
                         if(res.status === 200) {
                             Alert.alert('Payment Successful!');
                             navigation.popToTop();
@@ -120,28 +126,14 @@ const CheckoutScreen = ({ navigation, route }) => {
                         console.log(err);
                         Alert.alert('Payment Failed!');
                     });
-                }, (error)=> {
+                }).catch(error=> {
                     // handle failure
                     console.log(error);
                     Alert.alert(`Failure: ${error.code} | ${error.description}`);
                 });
             }
-        }).catch(err=> console.log(err));
-        // .then((data) => {
-        //     // handle success
-        //     Alert.alert(`Success: ${data.razorpay_payment_id}`);
-        // }).catch((error) => {
-        //     // handle failure
-        //     console.log(`Error: ${error.code} | ${error.description}`);
-        // });
+        }).catch(err=> console.log(err)).finally(() => setIsProcessing(false));
     };
-
-    const delhevery = {
-        address: '16/14, WEA, Karol Bagh, New Delhi, Delhi 110005, India',
-    }
-
-    // const itemTotal = route.params.cartItems.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-    // const totalToPay = itemTotal + restaurant.deliveryFee + restaurant.taxes;
 
     return (
         <>
@@ -154,9 +146,7 @@ const CheckoutScreen = ({ navigation, route }) => {
                     {cartItems.map((item, index) => (
                         <View key={index} style={styles.itemRow}>
                             <Text style={styles.itemName}>{item.name}</Text>
-                            <View style={styles.quantityControl}>
                                 <Text style={styles.quantity}>{item.quantity}</Text>
-                            </View>
                             <Text style={styles.itemPrice}>₹{(item.price * item.quantity).toFixed(2)}</Text>
                         </View>
                     ))}
@@ -207,7 +197,7 @@ const CheckoutScreen = ({ navigation, route }) => {
             </ScrollView>
             <View style={styles.paymentSection}>
                 <Text style={styles.totalAmount}>₹{totalToPay.toFixed(2)}</Text>
-                <TouchableOpacity style={styles.paymentButton} onPress={handleCheckout}>
+                <TouchableOpacity style={styles.paymentButton} onPress={handleCheckout} disabled={isProcessing}>
                     <Text style={styles.paymentText}>MAKE PAYMENT</Text>
                 </TouchableOpacity>
             </View>
@@ -242,19 +232,6 @@ const styles = StyleSheet.create({
     },
     itemName: {
         fontSize: 16,
-        color: 'black',
-    },
-    quantityControl: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        borderWidth: 1,
-        borderColor: 'gray',
-        borderRadius: 10,
-        paddingHorizontal: 10,
-    },
-    quantityButton: {
-        fontSize: 20,
-        padding: 5,
         color: 'black',
     },
     quantity: {

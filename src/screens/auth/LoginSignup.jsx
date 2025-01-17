@@ -13,7 +13,7 @@ const LoginSignupScreen = ({ navigation }) => {
     const [password, setPassword] = useState('');
 
     const handleLogin = () => {
-        axios.post('http://192.168.100.252:3000/api/auth/logIn', {
+        axios.post('http://192.168.176.252:3000/api/auth/logIn', {
             type: 'users',
             email,
             password,
@@ -37,7 +37,7 @@ const LoginSignupScreen = ({ navigation }) => {
     };
 
     const handleSignup = () => {
-        axios.post('http://192.168.100.252:3000/api/auth/signUp', {
+        axios.post('http://192.168.176.252:3000/api/auth/signUp', {
             type: 'users',
             name,
             email,
@@ -62,7 +62,7 @@ const LoginSignupScreen = ({ navigation }) => {
 
     const handleForgetPassword = async () => {
         if (email) {
-          axios.post('http://192.168.100.252:3000/api/auth/forgetPassword', {
+          axios.post('http://192.168.176.252:3000/api/auth/forgetPassword', {
             type: 'users',
             email: email,
           }).then((response) => {
